@@ -1,0 +1,35 @@
+# Default parameters for car_safety_node
+# These are loaded at startup and can still be changed at runtime
+# via `ros2 param set`, rqt_reconfigure, or other nodes.
+
+car_safety_node:
+  ros__parameters:
+    # Hands-off detection
+    hands_off.timeout_sec: 2.5
+    hands_off.torque_threshold_nm: 0.6
+
+    # Health critical thresholds
+    health.hr_critical_high: 160
+    health.hr_critical_low: 40
+    health.spo2_critical: 90.0
+    health.breathing_critical: 8
+    health.bp_sys_critical: 180
+    health.fatigue_critical: 0.85
+
+    # Long-range collision avoidance
+    long_range.lookahead_m: 160.0
+    long_range.min_ttc_sec: 3.8
+
+    # Vehicle dynamics
+    vehicle.max_decel_mps2: 6.0
+
+    # Emergency numbers
+    emergency.primary_number: "911"
+    emergency.backup_number: "112"
+    emergency.max_call_retries: 3
+
+    # Feature toggles
+    features.hands_off_enabled: true
+    features.health_monitor_enabled: true
+    features.long_range_enabled: true
+    features.auto_hospital_routing: true
