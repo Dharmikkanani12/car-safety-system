@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Car Safety System – Visual Preview</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --accent: #00d4aa;
+      --warn: #ffb020;
+      --crit: #ff4757;
+      --text: #e8eef7;
+      --dim: #8b9bb4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, var(--accent), #4facfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--dim); margin-bottom: 28px; font-size: 0.95rem; }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 960px;
+    }
+    @media (max-width: 700px) { .dashboard { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #2a3548;
+      position: relative;
+      overflow: hidden;
+    }
+    .card h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--dim);
+      margin-bottom: 14px;
+    }
+
+    .car-area {
+      height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .car {
+      font-size: 3.5rem;
+      transition: transform 0.4s ease;
+    }
+    .car.moving { animation: drive 1.2s ease-in-out infinite; }
+    .car.stopped { filter: grayscale(0.4); }
+    @keyframes drive {
+      0%, 100% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+    }
+    .status-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.manual { background: #1e3a2f; color: var(--accent); }
+    .badge.auto { background: #3a1e4a; color: #d580ff; }
+    .badge.hazard { background: #4a1e1e; color: var(--crit); animation: blink 1s infinite; }
+    .badge.pilot { background: #2a2a4a; color: #a0b0ff; }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .gauge {
+      background: #121a24;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .gauge .value { font-size: 1.4rem; font-weight: 700; }
+    .gauge .label { font-size: 0.7rem; color: var(--dim); }
+    .gauge.critical .value { color: var(--crit); }
+    .gauge.warning .value { color: var(--warn); }
+    .gauge.ok .value { color: var(--accent); }
+
+    .log {
+      height: 180px;
+      overflow-y: auto;
+      font-family: ui-monospace, monospace;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+    .log-entry { margin-bottom: 4px; }
+    .log-entry .ts { color: var(--dim); }
+    .log-entry.crit { color: var(--crit); }
+    .log-entry.warn { color: var(--warn); }
+    .log-entry.ok { color: var(--accent); }
+    .log-entry.pilot { color: #d580ff; }
+
+    .controls {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    button {
+      background: #243044;
+      color: var(--text);
+      border: 1px solid #3a4a62;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover { background: #2e3d56; border-color: var(--accent); }
+    button.danger { background: #3a1a1a; border-color: var(--crit); }
+    button.danger:hover { background: #4a2222; }
+
+    .param-bar {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 960px;
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 0.8rem;
+      color: var(--dim);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .param-bar strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <h1>Automated Car Safety System</h1>
+  <p class="subtitle">Interactive visual preview · ROS 2 parameter-server version</p>
+
+  <div class="dashboard">
+    <div class="card">
+      <h2>Vehicle State</h2>
+      <div class="car-area">
+        <div class="car moving" id="carEmoji">🚗</div>
+        <div class="status-row" id="badges">
+          <span class="badge manual" id="modeBadge">MANUAL</span>
+          <span class="badge" id="pilotBadge" style="display:none">PILOT ON</span>
+          <span class="badge hazard" id="hazardBadge" style="display:none">HAZARD</span>
+        </div>
+        <div id="speedLabel" style="font-size:1.1rem; margin-top:4px">92 km/h</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Health Monitor (Watch)</h2>
+      <div class="gauges">
+        <div class="gauge ok" id="gHr"><div class="value" id="vHr">74</div><div class="label">Heart Rate</div></div>
+        <div class="gauge ok" id="gSpo2"><div class="value" id="vSpo2">98%</div><div class="label">SpO₂</div></div>
+        <div class="gauge ok" id="gBreath"><div class="value" id="vBreath">15</div><div class="label">Breathing</div></div>
+        <div class="gauge ok" id="gFatigue"><div class="value" id="vFatigue">0.12</div><div class="label">Fatigue</div></div>
+      </div>
+      <div style="margin-top:12px; text-align:center">
+        Status: <strong id="healthStatus" style="color:var(--accent)">NORMAL</strong>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column: 1 / -1">
+      <h2>Safety Event Log</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <div class="param-bar">
+    <span>hands_off.timeout: <strong>2.5 s</strong></span>
+    <span>torque threshold: <strong>0.6 Nm</strong></span>
+    <span>min TTC: <strong>3.8 s</strong></span>
+    <span>lookahead: <strong>160 m</strong></span>
+    <span>hr critical: <strong>160 / 40</strong></span>
+  </div>
+
+  <div class="controls">
+    <button onclick="scenarioNormal()">Normal Driving</button>
+    <button onclick="scenarioHandsOff()">Hands Off Wheel</button>
+    <button class="danger" onclick="scenarioMedical()">Medical Emergency</button>
+    <button onclick="scenarioObstacle()">Long-range Obstacle</button>
+    <button onclick="resetAll()">Reset</button>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    let speed = 92;
+    let pilot = false;
+    let hazard = false;
+    let mode = 'MANUAL';
+
+    function log(msg, cls = '') {
+      const ts = new Date().toLocaleTimeString();
+      logEl.innerHTML = `<div class="log-entry ${cls}"><span class="ts">${ts}</span>  ${msg}</div>` + logEl.innerHTML;
+    }
+
+    function setMode(m) {
+      mode = m;
+      const badge = document.getElementById('modeBadge');
+      badge.textContent = m;
+      badge.className = 'badge ' + (m === 'MANUAL' ? 'manual' : 'auto');
+    }
+
+    function setPilot(on) {
+      pilot = on;
+      document.getElementById('pilotBadge').style.display = on ? 'inline' : 'none';
+      document.getElementById('pilotBadge').className = 'badge pilot';
+      document.getElementById('pilotBadge').textContent = 'PILOT ON';
+    }
+
+    function setHazard(on) {
+      hazard = on;
+      document.getElementById('hazardBadge').style.display = on ? 'inline' : 'none';
+    }
+
+    function setSpeed(s) {
+      speed = s;
+      document.getElementById('speedLabel').textContent = s.toFixed(0) + ' km/h';
+      const car = document.getElementById('carEmoji');
+      if (s < 1) {
+        car.className = 'car stopped';
+        car.textContent = '🚗';
+      } else {
+        car.className = 'car moving';
+      }
+    }
+
+    function setHealth(hr, spo2, breath, fatigue, status) {
+      document.getElementById('vHr').textContent = hr;
+      document.getElementById('vSpo2').textContent = spo2 + '%';
+      document.getElementById('vBreath').textContent = breath;
+      document.getElementById('vFatigue').textContent = fatigue.toFixed(2);
+      document.getElementById('healthStatus').textContent = status;
+      document.getElementById('healthStatus').style.color =
+        status === 'NORMAL' ? 'var(--accent)' :
+        status === 'WARNING' ? 'var(--warn)' : 'var(--crit)';
+
+      const setG = (id, level) => {
+        document.getElementById(id).className = 'gauge ' + level;
+      };
+      setG('gHr', hr > 120 || hr < 50 ? (hr > 160 || hr < 40 ? 'critical' : 'warning') : 'ok');
+      setG('gSpo2', spo2 < 94 ? (spo2 < 90 ? 'critical' : 'warning') : 'ok');
+      setG('gBreath', breath < 12 ? (breath < 8 ? 'critical' : 'warning') : 'ok');
+      setG('gFatigue', fatigue > 0.6 ? (fatigue > 0.85 ? 'critical' : 'warning') : 'ok');
+    }
+
+    function scenarioNormal() {
+      resetAll();
+      log('All systems nominal', 'ok');
+      log('Parameter server active – thresholds loaded', 'ok');
+    }
+
+    async function scenarioHandsOff() {
+      resetAll();
+      log('Steering torque dropped below 0.6 Nm', 'warn');
+      await wait(800);
+      log('Hands-off timer started (2.5 s)', 'warn');
+      await wait(1200);
+      log('HANDS-OFF confirmed', 'crit');
+      setPilot(true);
+      setMode('FULL_AUTONOMOUS');
+      setHazard(true);
+      log('Background pilot ACTIVATED', 'pilot');
+      await wait(600);
+      log('Executing roadside pull-over…', 'warn');
+      for (let s of [80, 55, 30, 10, 0]) {
+        setSpeed(s);
+        await wait(400);
+      }
+      log('Vehicle stopped on shoulder', 'ok');
+      log('Calling 911 + sharing live location', 'crit');
+      await wait(700);
+      log('Emergency services connected – live GPS streaming', 'ok');
+    }
+
+    async function scenarioMedical() {
+      resetAll();
+      setSpeed(95);
+      log('Sudden critical readings from smartwatch', 'crit');
+      setHealth(28, 79, 5, 0.94, 'CRITICAL');
+      await wait(900);
+      log('HR=28  SpO₂=79%  Breathing=5  → CRITICAL', 'crit');
+      setPilot(true);
+      setMode('FULL_AUTONOMOUS');
+      setHazard(true);
+      log('Pilot forced ON (manual mode overridden)', 'pilot');
+      await wait(700);
+      log('Routing to nearest hospital (SF General, 2.4 km)', 'ok');
+      await wait(800);
+      log('Hospital + emergency contacts + 911 notified', 'crit');
+      log('Live location stream started', 'ok');
+      setSpeed(70);
+    }
+
+    async function scenarioObstacle() {
+      resetAll();
+      setSpeed(105);
+      log('Stopped truck detected at 95 m', 'warn');
+      await wait(600);
+      log('Time-to-collision = 2.9 s  (< 3.8 s threshold)', 'crit');
+      setPilot(true);
+      setMode('FULL_AUTONOMOUS');
+      setHazard(true);
+      log('Automatic braking commanded', 'pilot');
+      for (let s of [90, 70, 50, 35]) {
+        setSpeed(s);
+        await wait(350);
+      }
+      log('Collision avoided – speed reduced', 'ok');
+    }
+
+    function resetAll() {
+      setMode('MANUAL');
+      setPilot(false);
+      setHazard(false);
+      setSpeed(92);
+      setHealth(74, 98, 15, 0.12, 'NORMAL');
+      logEl.innerHTML = '';
+      log('System reset to normal driving', 'ok');
+    }
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    scenarioNormal();
+  </script>
+</body>
+</html>
