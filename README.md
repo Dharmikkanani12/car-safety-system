@@ -1,6 +1,6 @@
 # Car Safety System
 
-ROS 2 automated car safety system featuring:
+ROS 2 + pure-Python automated car safety system featuring:
 
 - **Hands-off detection** → automatic roadside pull-over + emergency call + live location sharing
 - **Smartwatch / health monitoring** → critical medical event detection → hospital routing + notifications
@@ -8,21 +8,39 @@ ROS 2 automated car safety system featuring:
 - **Long-range obstacle / collision avoidance**
 - Full **ROS 2 parameter server** support (all thresholds configurable at runtime)
 
-## Quick demos (no ROS 2 required)
+## Repository contents
+
+| File / Folder | Description |
+|---------------|-------------|
+| **`car_safety_core.py`** | **Full pure-Python core** (main logic from the original design) |
+| **`CIRCUIT_AND_ARCHITECTURE.md`** | **Circuit-style block diagram + Mermaid architecture** |
+| `car_safety_demo_animation.py` | Terminal cinematic demo |
+| `car_safety_preview.html` | Interactive browser dashboard |
+| `car_safety_system/` | ROS 2 package (parameter server, node, launch, config) |
+
+## Quick start (no ROS required)
 
 ```bash
+# Full core system with 4 scenarios
+python3 car_safety_core.py
+
 # Terminal animation
 python3 car_safety_demo_animation.py
 
-# Open the interactive HTML dashboard in a browser
-# (or serve it: python3 -m http.server)
+# Open HTML dashboard in a browser
+# (or: python3 -m http.server)
 ```
 
-Open `car_safety_preview.html` in any browser for the visual dashboard with buttons to trigger each scenario.
+## Circuit & architecture
+
+See **[CIRCUIT_AND_ARCHITECTURE.md](CIRCUIT_AND_ARCHITECTURE.md)** for:
+
+- Hardware-style block diagram (sensors → Safety ECU → actuators / eCall)
+- Signal-flow circuit sketch
+- Mermaid software architecture (renders on GitHub)
+- Mapping of each block to code classes
 
 ## ROS 2 package
-
-See [`car_safety_system/README.md`](car_safety_system/README.md) for build & run instructions.
 
 ```bash
 cd ~/ros2_ws/src
@@ -33,7 +51,7 @@ source install/setup.bash
 ros2 launch car_safety_system safety.launch.py
 ```
 
-## Parameter server examples
+Parameter examples:
 
 ```bash
 ros2 param list /car_safety_node
